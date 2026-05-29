@@ -1,0 +1,14 @@
+# Java build output
+/target/
+/build/
+/.gradle/
+
+# Rust build output
+/native/target/
+
+# IDE files
+/.idea/
+*.iml
+
+# Misc
+/out/

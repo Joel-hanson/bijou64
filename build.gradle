@@ -1,0 +1,49 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+group = 'org.bijou64'
+version = '0.1.0'
+sourceCompatibility = '17'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+}
+
+def nativeReleaseDir = file('native/target/release')
+
+tasks.register('buildNative') {
+    description = 'Build the Rust native library used by the Java JNI wrapper.'
+    doLast {
+        exec {
+            workingDir file('native')
+            commandLine 'cargo', 'build', '--release'
+        }
+    }
+}
+
+tasks.named('build') {
+    dependsOn tasks.named('buildNative')
+}
+
+tasks.named('test') {
+    dependsOn tasks.named('buildNative')
+}
+
+test {
+    useJUnitPlatform()
+    systemProperty 'java.library.path', nativeReleaseDir.absolutePath
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+}

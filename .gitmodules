@@ -1,0 +1,4 @@
+[submodule "native/bijou"]
+	path = native/bijou
+	url = https://github.com/inkandswitch/bijou.git
+	branch = main
