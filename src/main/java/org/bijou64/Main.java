@@ -3,6 +3,10 @@ package org.bijou64;
 import java.util.Arrays;
 
 public class Main {
+    Main() {
+        // no-op
+    }
+
     public static void main(String[] args) {
         Bijou64 b = new Bijou64();
         System.out.println("Bijou64 version: " + b.getVersion());

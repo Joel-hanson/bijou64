@@ -1,8 +1,6 @@
-org/bijou64/perf/kafka/ProducerBenchmark.class
-org/bijou64/perf/kafka/ProducerBenchmarkVariant.class
-org/bijou64/perf/kafka/NormalConsumerBenchmark.class
 org/bijou64/perf/kafka/Bijou64Serializer.class
 org/bijou64/perf/kafka/Bijou64Deserializer.class
-org/bijou64/perf/kafka/NormalProducerBenchmark.class
 org/bijou64/perf/kafka/BijouNumberSerializer.class
+org/bijou64/perf/kafka/ProducerBenchmark.class
+org/bijou64/perf/kafka/ProducerBenchmarkVariant.class
 org/bijou64/perf/kafka/ConsumerBenchmark.class

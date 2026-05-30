@@ -25,7 +25,7 @@ run_once() {
   echo "[bench] Mode=$mode run=$runid -> logfile=$logfile"
 
   # Ensure the root artifact is installed so perf module compiles against local sources
-  mvn -B -DskipTests -f "$ROOT_DIR/../.." install >/dev/null 2>&1 || true
+  mvn -B -DskipTests -Dgpg.skip=true -f "$ROOT_DIR/../.." install >/dev/null 2>&1 || true
 
   # Run the producer (script will package and exec)
   if "$ROOT_DIR/scripts/run-producer.sh" --mode "$mode" --topic "$TOPIC" --bootstrap-server "$BOOTSTRAP" --count "$COUNT" >"$logfile" 2>&1; then

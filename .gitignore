@@ -59,6 +59,9 @@ Thumbs.db
 # Kafka / Perf Testing
 perf/kafka/logs/*.log
 perf/kafka/logs/*.csv
+perf/kafka/logs/
+perf/kafka/target/
+perf/kafka/native/target/
 perf/kafka/data/
 docker-compose.override.yml
 

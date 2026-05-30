@@ -33,17 +33,6 @@ Add to `pom.xml`:
 </dependencies>
 ```
 
-### Gradle
-
-Add to `build.gradle`:
-
-```gradle
-dependencies {
-    implementation 'org.bijou64:bijou64:0.1.0'
-    implementation 'org.bijou64:bijou64-kafka-serializers:0.1.0'
-    implementation 'org.apache.kafka:kafka-clients:3.5.1'
-}
-```
 
 ## Basic Usage
 
@@ -206,10 +195,10 @@ cd perf/kafka
 mvn clean package
 
 # Run Long serializer (baseline)
-./scripts/run-producer.sh --mode long --count 100000 --runs 3
+./scripts/run-producer.sh --mode long --count 100000 --topic bijou64-benchmark-topic --bootstrap-server localhost:9092
 
 # Run Bijou64 serializer
-./scripts/run-producer.sh --mode bijou --count 100000 --runs 3
+./scripts/run-producer.sh --mode bijou --count 100000 --topic bijou64-benchmark-topic --bootstrap-server localhost:9092
 
 # View results
 cat logs/results-*.csv | column -t -s','

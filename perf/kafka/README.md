@@ -135,19 +135,19 @@ docker compose logs kafka
 Test standard Long serialization:
 
 ```bash
-./scripts/run-producer.sh --mode long --count 200000 --runs 3
+./scripts/run-producer.sh --mode long --count 200000 --topic bijou64-benchmark-topic --bootstrap-server localhost:9092
 ```
 
 Test Bijou64 (JNI) serialization:
 
 ```bash
-./scripts/run-producer.sh --mode bijou --count 200000 --runs 3
+./scripts/run-producer.sh --mode bijou --count 200000 --topic bijou64-benchmark-topic --bootstrap-server localhost:9092
 ```
 
 Test Bijou64 (Java) serialization:
 
 ```bash
-./scripts/run-producer.sh --mode bijou-java --count 200000 --runs 3
+./scripts/run-producer.sh --mode bijou-java --count 200000 --topic bijou64-benchmark-topic --bootstrap-server localhost:9092
 ```
 
 #### Consumer Benchmarks
@@ -155,8 +155,8 @@ Test Bijou64 (Java) serialization:
 Test deserialization performance:
 
 ```bash
-./scripts/run-consumer.sh --mode long --count 200000 --runs 3
-./scripts/run-consumer.sh --mode bijou --count 200000 --runs 3
+./scripts/run-consumer.sh --mode long --count 200000 --topic bijou64-benchmark-topic --group-id bijou64-benchmark-group --bootstrap-server localhost:9092
+./scripts/run-consumer.sh --mode bijou --count 200000 --topic bijou64-benchmark-topic --group-id bijou64-benchmark-group --bootstrap-server localhost:9092
 ```
 
 #### Comparative Analysis
@@ -266,7 +266,7 @@ docker compose logs -f kafka
 Increase timeout or reduce message count:
 
 ```bash
-./scripts/run-producer.sh --count 50000 --runs 1
+./scripts/run-producer.sh --mode bijou --count 50000 --topic bijou64-benchmark-topic --bootstrap-server localhost:9092
 ```
 
 ## Production Deployment
@@ -375,19 +375,6 @@ cd perf/kafka
 ./scripts/run-consumer.sh --mode bijou-java --topic bijou-test --bootstrap-server localhost:9092 --group-id bijou-consumer --count 200000
 ```
 
-### Normal producer benchmark
-
-```bash
-cd perf/kafka
-./scripts/run-producer-normal.sh --topic bijou-test --bootstrap-server localhost:9092 --count 200000
-```
-
-### Normal consumer benchmark
-
-```bash
-cd perf/kafka
-./scripts/run-consumer-normal.sh --topic bijou-test --bootstrap-server localhost:9092 --group-id bijou-consumer --count 200000
-```
 
 ## Notes
 

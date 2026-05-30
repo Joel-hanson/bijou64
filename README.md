@@ -1,9 +1,22 @@
 # Bijou64 - Efficient Variable-Length Integer Encoding for Kafka
 
 [![Maven Central](https://img.shields.io/maven-central/v/org.bijou64/bijou64)](https://central.sonatype.com/search?q=bijou64)
+[![CI](https://github.com/yourusername/bijou64/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/bijou64/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache%202.0%20%7C%20MIT-blue)](LICENSE-APACHE)
 
-Bijou64 is a high-performance variable-length encoding library optimized for reducing message payload sizes in Kafka. By compressing integer values into fewer bytes, it enables **faster serialization, smaller network transfers, and reduced storage overhead** for Kafka topics.
+Bijou64 is a variable-length integer encoding library for Kafka `Long`/numeric payloads. By compressing integer values into fewer bytes, it enables smaller network transfers and lower storage overhead for integer-heavy topics.
+
+## When to Use / Not Use
+
+**Use Bijou64 when:**
+- Your Kafka values are mostly numeric (`Long`/`Integer`) and high-volume.
+- Topic storage and network egress costs matter.
+- You can deploy matching serializer/deserializer on both producer and consumer.
+
+**Do not use Bijou64 when:**
+- Payloads are arbitrary JSON/Avro/Protobuf objects (Kafka compression is usually the right first step).
+- You cannot control both producer and consumer serialization.
+- Your topics are short-lived and storage/network savings are negligible.
 
 ## Key Benefits
 
@@ -101,14 +114,14 @@ mvn -B clean install -DskipTests
 
 ```bash
 cd perf/kafka
-./scripts/run-producer.sh 200000 3
+./scripts/run-producer.sh --mode bijou --count 200000 --topic bijou64-benchmark-topic --bootstrap-server localhost:9092
 ```
 
 ### 4. Run Consumer Benchmark
 
 ```bash
 cd perf/kafka
-./scripts/run-consumer.sh 200000 3
+./scripts/run-consumer.sh --mode bijou --count 200000 --topic bijou64-benchmark-topic --group-id bijou64-benchmark-group --bootstrap-server localhost:9092
 ```
 
 ### 5. View Results
@@ -142,11 +155,6 @@ git submodule update --init --recursive
 mvn -B clean package
 ```
 
-### Building with Gradle
-
-```bash
-gradle build
-```
 
 ## Testing
 
@@ -175,8 +183,8 @@ bijou64.useJava=true
 ### Benchmarking Options
 
 ```bash
-./scripts/run-producer.sh [message_count] [runs] [topic] [bootstrap_servers]
-./scripts/run-consumer.sh [message_count] [runs] [topic] [bootstrap_servers]
+./scripts/run-producer.sh --mode [long|bijou|bijou-java] --count <n> --topic <topic> --bootstrap-server <host:port>
+./scripts/run-consumer.sh --mode [long|bijou|bijou-java] --count <n> --topic <topic> --group-id <group> --bootstrap-server <host:port>
 ```
 
 ## License
@@ -199,5 +207,4 @@ Contributions are welcome! Please ensure benchmarks pass and add tests for new f
 
 For issues or questions, open a GitHub issue with performance results from your environment.
 
-If you use Gradle, the Rust native library is built automatically as part of `gradle build`.
 If you use Maven, running `mvn -B clean package` will also invoke the native build before packaging.

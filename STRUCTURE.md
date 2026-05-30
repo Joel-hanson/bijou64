@@ -16,8 +16,6 @@ bijou64/
 ├── LICENSE-APACHE                     # Apache 2.0 license
 ├── LICENSE-MIT                        # MIT license
 ├── pom.xml                            # Root Maven configuration
-├── settings.gradle                    # Gradle settings (if using Gradle)
-├── build.gradle                       # Gradle build configuration
 ├── build-native.sh                    # Native Rust compilation script
 │
 ├── .github/
@@ -86,8 +84,6 @@ bijou64/
 | File                | Purpose                                           |
 | ------------------- | ------------------------------------------------- |
 | **pom.xml**         | Maven build, dependencies, Maven Central metadata |
-| **build.gradle**    | Gradle alternative build configuration            |
-| **settings.gradle** | Gradle multi-project settings                     |
 | **build-native.sh** | Compile Rust native library                       |
 
 ### GitHub Automation
@@ -186,7 +182,7 @@ mvn test
 
 # Run benchmarks
 cd perf/kafka && docker compose up -d
-./scripts/run-producer.sh 10000 1
+./scripts/run-producer.sh --mode bijou --count 10000 --topic bijou64-benchmark-topic --bootstrap-server localhost:9092
 ```
 
 ### CI/CD Pipeline

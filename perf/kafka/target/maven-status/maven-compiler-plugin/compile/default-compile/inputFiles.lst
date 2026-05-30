@@ -1,8 +1,6 @@
 /Users/joelhanson/Desktop/Personal/bijou64/perf/kafka/src/main/java/org/bijou64/perf/kafka/Bijou64Serializer.java
-/Users/joelhanson/Desktop/Personal/bijou64/perf/kafka/src/main/java/org/bijou64/perf/kafka/NormalProducerBenchmark.java
 /Users/joelhanson/Desktop/Personal/bijou64/perf/kafka/src/main/java/org/bijou64/perf/kafka/ProducerBenchmarkVariant.java
 /Users/joelhanson/Desktop/Personal/bijou64/perf/kafka/src/main/java/org/bijou64/perf/kafka/Bijou64Deserializer.java
 /Users/joelhanson/Desktop/Personal/bijou64/perf/kafka/src/main/java/org/bijou64/perf/kafka/ConsumerBenchmark.java
 /Users/joelhanson/Desktop/Personal/bijou64/perf/kafka/src/main/java/org/bijou64/perf/kafka/ProducerBenchmark.java
-/Users/joelhanson/Desktop/Personal/bijou64/perf/kafka/src/main/java/org/bijou64/perf/kafka/NormalConsumerBenchmark.java
 /Users/joelhanson/Desktop/Personal/bijou64/perf/kafka/src/main/java/org/bijou64/perf/kafka/BijouNumberSerializer.java

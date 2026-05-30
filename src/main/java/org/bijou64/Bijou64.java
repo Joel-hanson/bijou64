@@ -8,12 +8,15 @@ import java.util.Objects;
  * a pure-Java implementation for performance comparison without native code.
  */
 public class Bijou64 {
+    Bijou64() {
+        // no-op
+    }
+
     public static final String VERSION = "0.1.0";
 
     private static final int TAG_THRESHOLD = 248;
     private static final int NUM_TIERS = 8;
     private static final long[] OFFSETS = buildOffsets();
-    private static final long[] BOUNDS = buildBounds();
     private static final boolean NATIVE_AVAILABLE = loadNativeLibrary();
 
     public String getVersion() {
@@ -33,19 +36,18 @@ public class Bijou64 {
     }
 
     public static byte[] encodeJava(long value) {
-        long unsignedValue = value;
-        if (Long.compareUnsigned(unsignedValue, OFFSETS[1]) < 0) {
-            return new byte[] { (byte) unsignedValue };
+        long unsignedLongValue = value;
+        if (Long.compareUnsigned(unsignedLongValue, OFFSETS[1]) < 0) {
+            return new byte[] { (byte) unsignedLongValue };
         }
 
-        int bitWidth = 64 - Long.numberOfLeadingZeros(unsignedValue);
-        int tier = ((bitWidth - 1) / 8) + 1;
-        if (Long.compareUnsigned(unsignedValue, BOUNDS[tier - 1]) < 0) {
-            tier -= 1;
+        int tier = 1;
+        while (tier < NUM_TIERS && Long.compareUnsigned(unsignedLongValue, OFFSETS[tier + 1]) >= 0) {
+            tier++;
         }
 
         byte tag = (byte) (247 + tier);
-        long payload = unsignedValue - OFFSETS[tier];
+        long payload = unsignedLongValue - OFFSETS[tier];
         long shifted = payload << ((8 - tier) * 8);
 
         byte[] encoded = new byte[tier + 1];
@@ -77,11 +79,11 @@ public class Bijou64 {
             case 0xFE -> OFFSETS[7] + readUnsignedLong(bytes, 1, 7);
             case 0xFF -> {
                 long payload = readUnsignedLong(bytes, 1, 8);
-                long result = payload + OFFSETS[8];
-                if (Long.compareUnsigned(result, payload) < 0) {
+                long maxPayloadWithoutOverflow = ~OFFSETS[8];
+                if (Long.compareUnsigned(payload, maxPayloadWithoutOverflow) > 0) {
                     throw new IllegalArgumentException("bijou64 decode overflow");
                 }
-                yield result;
+                yield payload + OFFSETS[8];
             }
             default -> throw new IllegalArgumentException("Invalid bijou64 tag byte: " + tag);
         };
@@ -110,15 +112,6 @@ public class Bijou64 {
             offsets[tier] = offsets[tier - 1] + (1L << ((tier - 1) * 8));
         }
         return offsets;
-    }
-
-    private static long[] buildBounds() {
-        long[] bounds = new long[NUM_TIERS + 1];
-        for (int i = 0; i < NUM_TIERS; i++) {
-            bounds[i] = OFFSETS[i + 1];
-        }
-        bounds[NUM_TIERS] = -1L; // Unsigned max
-        return bounds;
     }
 
     private static boolean loadNativeLibrary() {

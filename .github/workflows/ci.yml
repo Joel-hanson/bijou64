@@ -113,12 +113,12 @@ jobs:
             - name: Run producer benchmark
               run: |
                   cd perf/kafka
-                  ./scripts/run-producer.sh --bootstrap-server localhost:9092 --count 50000 --runs 1
+                  ./scripts/run-producer.sh --mode bijou --bootstrap-server localhost:9092 --count 50000 --topic bijou64-benchmark-topic
               timeout-minutes: 10
 
             - name: Upload benchmark results
               if: always()
-              uses: actions/upload-artifact@v3
+              uses: actions/upload-artifact@v7
               with:
                   name: benchmark-results
                   path: perf/kafka/logs/

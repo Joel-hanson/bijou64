@@ -2,6 +2,7 @@ package org.bijou64;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.nio.file.Path;
@@ -46,5 +47,29 @@ public class Bijou64Test {
         byte[] nativeBytes = Bijou64.encode(300);
         assertArrayEquals(javaBytes, nativeBytes);
         assertEquals(Bijou64.decodeJava(nativeBytes), Bijou64.decode(nativeBytes));
+    }
+
+    @Test
+    void javaRoundTripsTierBoundaries() {
+        long[] values = new long[] { 0L, 247L, 248L, 503L, 504L, 66039L, Long.MAX_VALUE };
+        for (long value : values) {
+            assertEquals(value, Bijou64.decodeJava(Bijou64.encodeJava(value)));
+        }
+    }
+
+    @Test
+    void decodeJavaRejectsOverflowForFfTag() {
+        byte[] overflowing = new byte[] {
+                (byte) 0xFF,
+                (byte) 0xFF,
+                (byte) 0xFF,
+                (byte) 0xFF,
+                (byte) 0xFF,
+                (byte) 0xFF,
+                (byte) 0xFF,
+                (byte) 0xFF,
+                (byte) 0xFF
+        };
+        assertThrows(IllegalArgumentException.class, () -> Bijou64.decodeJava(overflowing));
     }
 }
