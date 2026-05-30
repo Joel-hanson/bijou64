@@ -57,7 +57,7 @@ Build this module and include in your Kafka broker's plugin path or client class
 
 ```bash
 mvn -B clean package
-# JAR: target/bijou64-kafka-perf-0.1.0.jar
+# JAR: target/bijou64-kafka-serializers-0.1.0.jar
 ```
 
 ### Step 3: Configure Serializers
@@ -96,6 +96,14 @@ value.serializer=org.bijou64.perf.kafka.Bijou64Serializer
 key.deserializer=org.apache.kafka.common.serialization.StringDeserializer
 value.deserializer=org.bijou64.perf.kafka.Bijou64Deserializer
 ```
+
+## Release signaling
+
+This repository uses Git tags and a changelog to signal releases:
+
+- Create a signed Git tag like `v0.1.0` for each release.
+- Update `CHANGELOG.md` with release notes under the `Unreleased` section before tagging.
+- GitHub Actions will build and publish artifacts when a `v*` tag is pushed.
 
 ## Benchmarking
 
@@ -138,6 +146,14 @@ Test standard Long serialization:
 ./scripts/run-producer.sh --mode long --count 200000 --topic bijou64-benchmark-topic --bootstrap-server localhost:9092
 ```
 
+Test Kafka transport compression with standard Long serialization:
+
+```bash
+./scripts/run-producer.sh --mode long --compression zstd --count 200000 --topic bijou64-benchmark-topic --bootstrap-server localhost:9092
+./scripts/run-producer.sh --mode long --compression snappy --count 200000 --topic bijou64-benchmark-topic --bootstrap-server localhost:9092
+./scripts/run-producer.sh --mode long --compression lz4 --count 200000 --topic bijou64-benchmark-topic --bootstrap-server localhost:9092
+```
+
 Test Bijou64 (JNI) serialization:
 
 ```bash
@@ -167,18 +183,26 @@ Run all modes and compare side-by-side:
 ./scripts/compare-benchmarks.sh 200000 3
 ```
 
+This compares:
+
+- `long` without compression
+- `long` with Kafka transport compression (`zstd`, `snappy`, `lz4`)
+- `bijou` and `bijou-java` payload-level encoding
+
+Use these results to answer: “why use Bijou64 instead of `compression.type`?” by comparing payload size, throughput, and end-to-end behavior.
+
 ### Results
 
 Benchmark results are stored in `logs/results-*.csv`:
 
 ```csv
-mode,run,rate,avg_bytes,exit_code
-long,1,305051,8.0,0
-long,2,373400,8.0,0
-bijou,1,282473,3.7,0
-bijou,2,316501,3.7,0
-bijou-java,1,370375,3.7,0
-bijou-java,2,377400,3.7,0
+mode,compression,run,rate,avg_bytes,exit_code
+long,none,1,305051,8.0,0
+long,zstd,1,280000,8.0,0
+long,snappy,1,295000,8.0,0
+long,lz4,1,290000,8.0,0
+bijou,none,1,282473,3.7,0
+bijou-java,none,1,370375,3.7,0
 ```
 
 **Key Metrics:**
@@ -375,9 +399,7 @@ cd perf/kafka
 ./scripts/run-consumer.sh --mode bijou-java --topic bijou-test --bootstrap-server localhost:9092 --group-id bijou-consumer --count 200000
 ```
 
-
 ## Notes
 
 - `Bijou64` uses the native JNI library, so the root project must be built and installed first.
 - Run the benchmark from the repository root or set the JVM library path if the native library does not load.
-- `report.md` is a template for capturing results and observations.

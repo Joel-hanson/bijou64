@@ -1,125 +1,144 @@
 name: CI
 
 on:
-    push:
-        branches: [main, develop]
-    pull_request:
-        branches: [main, develop]
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
 
 permissions:
-    contents: read
+  contents: read
 
 jobs:
-    test:
-        runs-on: ubuntu-latest
+  test:
+    runs-on: ubuntu-latest
 
-        steps:
-            - uses: actions/checkout@v4
-              with:
-                  submodules: recursive
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-            - name: Set up Rust
-              uses: dtolnay/rust-toolchain@stable
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
 
-            - name: Set up Java
-              uses: actions/setup-java@v3
-              with:
-                  java-version: "17"
-                  distribution: "temurin"
-                  cache: maven
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          cache: maven
 
-            - name: Build native library
-              run: ./build-native.sh
+      - name: Build native library
+        run: ./build-native.sh
 
-            - name: Run tests
-              run: mvn -B clean verify
+      - name: Run tests
+        run: mvn -B clean verify -Dgpg.skip=true
 
-            - name: Build perf module
-              run: mvn -B -f perf/kafka/pom.xml clean package
+      - name: Build perf module
+        run: ./perf/kafka/scripts/build.sh
 
-    test-matrix:
-        name: Test on ${{ matrix.os }} with Java ${{ matrix.java }}
-        runs-on: ${{ matrix.os }}
-        strategy:
-            matrix:
-                os: [ubuntu-latest, macos-latest]
-                java: ["17", "21"]
+  test-matrix:
+    name: Test on ${{ matrix.os }} with Java ${{ matrix.java }}
+    runs-on: ${{ matrix.os }}
 
-        steps:
-            - uses: actions/checkout@v4
-              with:
-                  submodules: recursive
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        java: ["17", "21"]
 
-            - name: Set up Rust
-              uses: dtolnay/rust-toolchain@stable
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-            - name: Set up Java ${{ matrix.java }}
-              uses: actions/setup-java@v3
-              with:
-                  java-version: ${{ matrix.java }}
-                  distribution: "temurin"
-                  cache: maven
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
 
-            - name: Build native library
-              run: ./build-native.sh
-              if: runner.os != 'Windows'
+      - name: Set up Java ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: "temurin"
+          cache: maven
 
-            - name: Run tests
-              run: mvn -B clean test
+      - name: Build native library
+        run: ./build-native.sh
+        if: runner.os != 'Windows'
 
-    benchmark:
-        runs-on: ubuntu-latest
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Run tests
+        run: mvn -B clean test -Dgpg.skip=true
 
-        services:
-            zookeeper:
-                image: confluentinc/cp-zookeeper:7.5.0
-                env:
-                    ZOOKEEPER_CLIENT_PORT: 2181
+  benchmark:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
-            kafka:
-                image: confluentinc/cp-kafka:7.5.0
-                env:
-                    KAFKA_BROKER_ID: 1
-                    KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-                    KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
-                    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-                    KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-                    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    services:
+      kafka:
+        image: apache/kafka:3.9.0
+        ports:
+          - 9092:9092
+        env:
+          KAFKA_NODE_ID: 1
+          KAFKA_PROCESS_ROLES: broker,controller
+          KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+          KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+          KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+          KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+          KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+          KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+          KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+          KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+          KAFKA_NUM_PARTITIONS: 1
 
-        steps:
-            - uses: actions/checkout@v4
-              with:
-                  submodules: recursive
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-            - name: Set up Rust
-              uses: dtolnay/rust-toolchain@stable
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
 
-            - name: Set up Java
-              uses: actions/setup-java@v3
-              with:
-                  java-version: "17"
-                  distribution: "temurin"
-                  cache: maven
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          cache: maven
 
-            - name: Build native library
-              run: ./build-native.sh
+      - name: Build native library
+        run: ./build-native.sh
 
-            - name: Install and build
-              run: |
-                  mvn -B clean install -DskipTests
-                  mvn -B -f perf/kafka/pom.xml clean package -DskipTests
+      - name: Install and build
+        run: |
+          mvn -B clean install -DskipTests -Dgpg.skip=true
+          mvn -B -f perf/kafka/pom.xml clean package -DskipTests -Dgpg.skip=true
 
-            - name: Run producer benchmark
-              run: |
-                  cd perf/kafka
-                  ./scripts/run-producer.sh --mode bijou --bootstrap-server localhost:9092 --count 50000 --topic bijou64-benchmark-topic
-              timeout-minutes: 10
+      - name: Wait for Kafka
+        run: |
+          echo "Waiting for Kafka to start..."
+          for i in {1..30}; do
+            nc -z localhost 9092 && echo "Kafka is up!" && exit 0
+            sleep 2
+          done
+          echo "Kafka failed to start"
+          exit 1
 
-            - name: Upload benchmark results
-              if: always()
-              uses: actions/upload-artifact@v7
-              with:
-                  name: benchmark-results
-                  path: perf/kafka/logs/
-                  retention-days: 30
+      - name: Run producer benchmark
+        run: |
+          cd perf/kafka
+          ./scripts/run-producer.sh \
+            --mode bijou \
+            --bootstrap-server localhost:9092 \
+            --count 50000 \
+            --topic bijou64-benchmark-topic
+        timeout-minutes: 10
+
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: perf/kafka/logs/
+          retention-days: 30

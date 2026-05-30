@@ -220,7 +220,7 @@ Slightly lower than baseline due to:
 
 ```bash
 # Producer Test
-java -cp target/bijou64-kafka-perf-0.1.0.jar \
+java -cp target/bijou64-kafka-serializers-0.1.0.jar \
   org.bijou64.perf.kafka.ProducerBenchmark \
   --mode bijou \
   --count 200000 \

@@ -8,27 +8,46 @@ ROOT_DIR=$(cd "$(dirname "$0")/.." && pwd)
 LOG_DIR="$ROOT_DIR/logs"
 mkdir -p "$LOG_DIR"
 
-MODES=(long bijou bijou-java)
+MODES=(
+#   "long:none"
+#   "long:zstd"
+#   "long:snappy"
+#   "long:lz4"
+#   "bijou:none"
+  "bijou:zstd"
+  "bijou:snappy"
+  "bijou:lz4"
+#   "bijou-java:none"
+  "bijou-java:zstd"
+  "bijou-java:snappy"
+  "bijou-java:lz4"
+)
 COUNT=${1:-100000}
 ITERATIONS=${2:-3}
 TOPIC=${3:-bijou-benchmark-topic}
 BOOTSTRAP=${4:-localhost:9092}
 
 results_csv="$LOG_DIR/results-$(date +%Y%m%dT%H%M%S).csv"
-echo "mode,run,rate,avg_bytes,exit_code,logfile" > "$results_csv"
+echo "mode,compression,run,rate,avg_bytes,exit_code,logfile" > "$results_csv"
 
 run_once() {
   local mode=$1
   local runid=$2
-  local logfile="$LOG_DIR/producer-${mode}-run${runid}-$(date +%s).log"
+  IFS=':' read -r base_mode compression <<< "$mode"
+  local logfile="$LOG_DIR/producer-${base_mode}-${compression}-run${runid}-$(date +%s).log"
 
-  echo "[bench] Mode=$mode run=$runid -> logfile=$logfile"
+  echo "[bench] Mode=$base_mode compression=$compression run=$runid -> logfile=$logfile"
 
   # Ensure the root artifact is installed so perf module compiles against local sources
-  mvn -B -DskipTests -Dgpg.skip=true -f "$ROOT_DIR/../.." install >/dev/null 2>&1 || true
+  mvn -B -DskipTests -Dgpg.skip=true -f "$ROOT_DIR/../.." install >/dev/null 2>&1
+
+  local compression_args=()
+  if [[ "$compression" != "none" ]]; then
+    compression_args=(--compression "$compression")
+  fi
 
   # Run the producer (script will package and exec)
-  if "$ROOT_DIR/scripts/run-producer.sh" --mode "$mode" --topic "$TOPIC" --bootstrap-server "$BOOTSTRAP" --count "$COUNT" >"$logfile" 2>&1; then
+  if "$ROOT_DIR/scripts/run-producer.sh" --mode "$base_mode" --topic "$TOPIC" --bootstrap-server "$BOOTSTRAP" --count "$COUNT" "${compression_args[@]}" >"$logfile" 2>&1; then
     exit_code=0
   else
     exit_code=$?
@@ -48,7 +67,7 @@ run_once() {
     avg_bytes=$(echo "$avg_line" | sed -n 's/.*Average payload size:[[:space:]]*\([0-9.]*\) bytes.*/\1/p')
   fi
 
-  echo "$mode,$runid,$rate,$avg_bytes,$exit_code,$logfile" >> "$results_csv"
+  echo "$base_mode,$compression,$runid,$rate,$avg_bytes,$exit_code,$logfile" >> "$results_csv"
 }
 
 # Run iterations
@@ -60,10 +79,11 @@ done
 
 # Summarize
 echo
-printf "%-10s %-6s %-12s %-12s\n" Mode Runs BestRate AvgBytes
+printf "%-10s %-12s %-6s %-12s %-12s\n" "Mode" "Compression" "Runs" "BestRate" "AvgBytes"
 for mode in "${MODES[@]}"; do
-  rates=($(awk -F, -v m="$mode" '$1==m { if($3=="") next; print $3 }' "$results_csv" | tr '\n' ' '))
-  avgbytes=($(awk -F, -v m="$mode" '$1==m { if($4=="") next; print $4 }' "$results_csv" | tr '\n' ' '))
+  IFS=':' read -r base_mode compression <<< "$mode"
+  rates=($(awk -F, -v m="$base_mode" -v c="$compression" '$1==m && $2==c { if($4=="") next; print $4 }' "$results_csv" | tr '\n' ' '))
+  avgbytes=($(awk -F, -v m="$base_mode" -v c="$compression" '$1==m && $2==c { if($5=="") next; print $5 }' "$results_csv" | tr '\n' ' '))
   best=0
   for r in "${rates[@]}"; do
     if [[ -z "$r" ]]; then continue; fi
@@ -72,7 +92,7 @@ for mode in "${MODES[@]}"; do
   # Use first avg_bytes as representative (they should be stable)
   rep_avg=0
   if [[ ${#avgbytes[@]} -gt 0 ]]; then rep_avg=${avgbytes[0]}; fi
-  printf "%-10s %-6d %-12s %-12s\n" "$mode" "$ITERATIONS" "${best:-0}" "${rep_avg:-0}"
+  printf "%-10s %-12s %-6d %-12s %-12s\n" "$base_mode" "$compression" "$ITERATIONS" "${best:-0}" "${rep_avg:-0}"
 done
 
 echo
