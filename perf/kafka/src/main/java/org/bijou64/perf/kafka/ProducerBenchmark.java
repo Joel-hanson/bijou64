@@ -19,6 +19,7 @@ public class ProducerBenchmark {
         String topic = config.getOrDefault("topic", "bijou64-benchmark-topic");
         String mode = config.getOrDefault("mode", "bijou");
         long count = Long.parseLong(config.getOrDefault("count", "100000"));
+        String compression = config.getOrDefault("compression", "none");
 
         String serializerClass;
         boolean useJavaBijou = false;
@@ -41,12 +42,16 @@ public class ProducerBenchmark {
         if (useJavaBijou) {
             props.put("bijou64.useJava", "true");
         }
+        if (!"none".equalsIgnoreCase(compression)) {
+            props.put("compression.type", compression);
+        }
         props.put("acks", "1");
         props.put("linger.ms", "5");
         props.put("batch.size", "16384");
         props.put("max.in.flight.requests.per.connection", "5");
 
-        System.out.println("Producer benchmark starting with mode=" + mode + ", topic=" + topic + ", count=" + count);
+        System.out.println("Producer benchmark starting with mode=" + mode + ", compression=" + compression + ", topic="
+                + topic + ", count=" + count);
         try (KafkaProducer<String, Long> producer = new KafkaProducer<>(props)) {
             long start = System.nanoTime();
             long totalBytes = 0;
@@ -84,6 +89,7 @@ public class ProducerBenchmark {
                 case "--topic" -> config.put("topic", requireArg(args, ++i, arg));
                 case "--mode" -> config.put("mode", requireArg(args, ++i, arg));
                 case "--count" -> config.put("count", requireArg(args, ++i, arg));
+                case "--compression" -> config.put("compression", requireArg(args, ++i, arg));
                 default -> printUsageAndExit("Unknown argument: " + arg);
             }
         }
@@ -100,7 +106,7 @@ public class ProducerBenchmark {
     private static void printUsageAndExit(String message) {
         System.err.println(message);
         System.err.println(
-                "Usage: java org.bijou64.perf.kafka.ProducerBenchmark --mode [bijou|bijou-java|long] --topic <topic> --bootstrap-server <host:port> --count <n>");
+                "Usage: java org.bijou64.perf.kafka.ProducerBenchmark --mode [bijou|bijou-java|long] --topic <topic> --bootstrap-server <host:port> --count <n> [--compression none|zstd|snappy|lz4]");
         System.exit(1);
     }
 }

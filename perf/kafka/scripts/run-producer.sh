@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# cd "$(dirname \"$0\")/.."
+cd "$(dirname "$0")/.."
 
 # Ensure the root `bijou64` artifact is installed so the perf module
 # compiles against the local sources (includes recent Bijou64 methods).
