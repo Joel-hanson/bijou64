@@ -1,0 +1,125 @@
+name: CI
+
+on:
+    push:
+        branches: [main, develop]
+    pull_request:
+        branches: [main, develop]
+
+permissions:
+    contents: read
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  submodules: recursive
+
+            - name: Set up Rust
+              uses: dtolnay/rust-toolchain@stable
+
+            - name: Set up Java
+              uses: actions/setup-java@v3
+              with:
+                  java-version: "17"
+                  distribution: "temurin"
+                  cache: maven
+
+            - name: Build native library
+              run: ./build-native.sh
+
+            - name: Run tests
+              run: mvn -B clean verify
+
+            - name: Build perf module
+              run: mvn -B -f perf/kafka/pom.xml clean package
+
+    test-matrix:
+        name: Test on ${{ matrix.os }} with Java ${{ matrix.java }}
+        runs-on: ${{ matrix.os }}
+        strategy:
+            matrix:
+                os: [ubuntu-latest, macos-latest]
+                java: ["17", "21"]
+
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  submodules: recursive
+
+            - name: Set up Rust
+              uses: dtolnay/rust-toolchain@stable
+
+            - name: Set up Java ${{ matrix.java }}
+              uses: actions/setup-java@v3
+              with:
+                  java-version: ${{ matrix.java }}
+                  distribution: "temurin"
+                  cache: maven
+
+            - name: Build native library
+              run: ./build-native.sh
+              if: runner.os != 'Windows'
+
+            - name: Run tests
+              run: mvn -B clean test
+
+    benchmark:
+        runs-on: ubuntu-latest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+        services:
+            zookeeper:
+                image: confluentinc/cp-zookeeper:7.5.0
+                env:
+                    ZOOKEEPER_CLIENT_PORT: 2181
+
+            kafka:
+                image: confluentinc/cp-kafka:7.5.0
+                env:
+                    KAFKA_BROKER_ID: 1
+                    KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+                    KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+                    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+                    KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+                    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  submodules: recursive
+
+            - name: Set up Rust
+              uses: dtolnay/rust-toolchain@stable
+
+            - name: Set up Java
+              uses: actions/setup-java@v3
+              with:
+                  java-version: "17"
+                  distribution: "temurin"
+                  cache: maven
+
+            - name: Build native library
+              run: ./build-native.sh
+
+            - name: Install and build
+              run: |
+                  mvn -B clean install -DskipTests
+                  mvn -B -f perf/kafka/pom.xml clean package -DskipTests
+
+            - name: Run producer benchmark
+              run: |
+                  cd perf/kafka
+                  ./scripts/run-producer.sh --bootstrap-server localhost:9092 --count 50000 --runs 1
+              timeout-minutes: 10
+
+            - name: Upload benchmark results
+              if: always()
+              uses: actions/upload-artifact@v3
+              with:
+                  name: benchmark-results
+                  path: perf/kafka/logs/
+                  retention-days: 30

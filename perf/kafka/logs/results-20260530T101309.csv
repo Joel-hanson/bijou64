@@ -1,0 +1,10 @@
+mode,run,rate,avg_bytes,exit_code,logfile
+long,1,268323,8.0,0,/Users/joelhanson/Desktop/Personal/bijou64/perf/kafka/logs/producer-long-run1-1780116189.log
+long,2,296697,8.0,0,/Users/joelhanson/Desktop/Personal/bijou64/perf/kafka/logs/producer-long-run2-1780116199.log
+long,3,334027,8.0,0,/Users/joelhanson/Desktop/Personal/bijou64/perf/kafka/logs/producer-long-run3-1780116207.log
+bijou,1,286681,3.7,0,/Users/joelhanson/Desktop/Personal/bijou64/perf/kafka/logs/producer-bijou-run1-1780116214.log
+bijou,2,213962,3.7,0,/Users/joelhanson/Desktop/Personal/bijou64/perf/kafka/logs/producer-bijou-run2-1780116223.log
+bijou,3,149516,3.7,0,/Users/joelhanson/Desktop/Personal/bijou64/perf/kafka/logs/producer-bijou-run3-1780116232.log
+bijou-java,1,315253,3.7,0,/Users/joelhanson/Desktop/Personal/bijou64/perf/kafka/logs/producer-bijou-java-run1-1780116242.log
+bijou-java,2,331558,3.7,0,/Users/joelhanson/Desktop/Personal/bijou64/perf/kafka/logs/producer-bijou-java-run2-1780116251.log
+bijou-java,3,364229,3.7,0,/Users/joelhanson/Desktop/Personal/bijou64/perf/kafka/logs/producer-bijou-java-run3-1780116258.log

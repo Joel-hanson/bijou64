@@ -1,14 +1,97 @@
-# Java build output
-/target/
-/build/
-/.gradle/
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+release.properties
+.flattened-pom.xml
+*.jar.asc
+.m2/
 
-# Rust build output
-/native/target/
+# Gradle
+build/
+.gradle/
+*.gradle.kts.bak
+gradle-app.setting
+!gradle-wrapper.jar
+.gradletasknamecache
 
-# IDE files
-/.idea/
+# Rust / Native builds
+native/target/
+native/**/*.rlib
+native/bijou/target/
+Cargo.lock
+*.so
+*.dylib
+*.dll
+
+# IDE / Editor
+.idea/
+.vscode/
 *.iml
+*.iws
+*.ipr
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
 
-# Misc
+# OS
+.DS_Store
+Thumbs.db
+.env.local
+.env.*.local
+
+# Build artifacts
 /out/
+/bin/
+*.class
+*.log
+*.ctxt
+
+# Package files
+*.zip
+*.tar.gz
+*.tar.bz2
+*.rar
+
+# Kafka / Perf Testing
+perf/kafka/logs/*.log
+perf/kafka/logs/*.csv
+perf/kafka/data/
+docker-compose.override.yml
+
+# Node / WASM Build
+node_modules/
+dist/
+*.tsbuildinfo
+.npm
+.eslintcache
+
+# Test coverage
+coverage/
+.nyc_output/
+*.lcov
+htmlcov/
+
+# Local development
+.env
+.env.local
+*.swp
+*.swo
+*~
+.tmp/
+
+# Performance profiling
+perf-*.json
+flamegraph.svg
+
+# Git temp files
+*.orig
+*.patch
+*.rej
+
+# Archive temp
+.DS_Store
+*/.DS_Store
