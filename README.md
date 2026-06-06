@@ -40,7 +40,7 @@ On every push to `main`, the **`benchmark` job** in [`.github/workflows/ci.yml`]
 
 **Modes tested in CI:** `long` and `bijou` / `bijou-java`, each with `none` and `zstd` compression.
 
-Results from CI run `2026-06-06` ([`results-20260606T110707.csv`](results-20260606T110707.csv)):
+Results from CI run `2026-06-06` ([`results-20260606T110707.csv`](https://github.com/Joel-hanson/bijou64/actions/runs/27060603235)):
 
 | Mode           | Compression | Median throughput | Avg payload |
 | -------------- | ----------- | ----------------- | ----------- |

@@ -22,11 +22,14 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Set up Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: "17"
           distribution: "temurin"
           cache: maven
+          server-id: github
+          server-username: ${{ github.actor }}
+          server-password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build native library
         run: ./build-native.sh
@@ -76,13 +79,8 @@ jobs:
       - name: Upload artifacts to GitHub Packages
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         run: |
-          mvn -B deploy -DskipTests -Dgpg.skip=true \
-            -Dregistry=https://maven.pkg.github.com \
-            -Dusername=GITHUB_ACTOR \
-            -Dpassword=GITHUB_TOKEN
-        env:
-          GITHUB_ACTOR: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          mvn -B deploy -Pgithub-packages -DskipTests -Dgpg.skip=true
+          mvn -B deploy -Pgithub-packages -DskipTests -Dgpg.skip=true -f perf/kafka/pom.xml
 
   build-matrix:
     name: Build on ${{ matrix.os }}
