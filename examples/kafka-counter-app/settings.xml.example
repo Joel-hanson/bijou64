@@ -1,0 +1,20 @@
+<!--
+  Copy to ~/.m2/settings.xml (merge with any existing settings).
+
+  Replace YOUR_GITHUB_USERNAME with your GitHub login.
+  Replace YOUR_GITHUB_PAT with a token that has read:packages scope.
+
+  Or use an environment variable (recommended for CI):
+    <password>${env.GITHUB_TOKEN}</password>
+-->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+  <servers>
+    <server>
+      <id>github</id>
+      <username>YOUR_GITHUB_USERNAME</username>
+      <password>YOUR_GITHUB_PAT</password>
+    </server>
+  </servers>
+</settings>

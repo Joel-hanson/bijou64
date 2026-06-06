@@ -102,6 +102,22 @@ value.deserializer=org.bijou64.perf.kafka.Bijou64Deserializer
 </dependency>
 ```
 
+Published to [GitHub Packages](https://github.com/Joel-hanson/bijou64/packages) on release. Add the repository and authenticate with a PAT (`read:packages`); see [examples/kafka-counter-app](examples/kafka-counter-app/) for a complete sample project.
+
+## Example Application
+
+A minimal Kafka producer/consumer that pulls `bijou64-kafka-serializers` from GitHub Packages:
+
+```bash
+cd examples/kafka-counter-app
+cp settings.xml.example ~/.m2/settings.xml   # add your GitHub PAT
+mvn -B package
+docker compose up -d
+mvn exec:java -Dexec.mainClass=org.bijou64.examples.kafka.CounterProducer
+```
+
+See [examples/kafka-counter-app/README.md](examples/kafka-counter-app/README.md) for full setup.
+
 ## Building
 
 ```bash
