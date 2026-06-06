@@ -111,6 +111,34 @@ public class Bijou64 {
     }
 
     /**
+     * Returns the encoded length in bytes for a u64 value without allocating.
+     *
+     * @param value the unsigned 64-bit value
+     * @return encoded length (1–9 bytes)
+     */
+    public static int encodedLen(long value) {
+        return encodedLenJava(value);
+    }
+
+    /**
+     * Pure-Java implementation of encoded length calculation.
+     *
+     * @param value the unsigned 64-bit value
+     * @return encoded length (1–9 bytes)
+     */
+    public static int encodedLenJava(long value) {
+        if (Long.compareUnsigned(value, OFFSETS[1]) < 0) {
+            return 1;
+        }
+
+        int tier = 1;
+        while (tier < NUM_TIERS && Long.compareUnsigned(value, OFFSETS[tier + 1]) >= 0) {
+            tier++;
+        }
+        return tier + 1;
+    }
+
+    /**
      * Pure-Java implementation of bijou64 encoding.
      *
      * <p>Encodes a u64 value into 1–9 bytes:

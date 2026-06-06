@@ -10,14 +10,9 @@
 
     <name>Bijou64 Kafka Serializers</name>
     <description>Kafka Serializer/Deserializer implementations for Bijou64 variable-length integer encoding. Drop-in replacement for Long serialization with 54% payload size reduction.</description>
-    <url>https://github.com/yourusername/bijou64</url>
+    <url>https://github.com/Joel-hanson/bijou64</url>
 
     <licenses>
-        <license>
-            <name>Apache License 2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
-            <distribution>repo</distribution>
-        </license>
         <license>
             <name>MIT License</name>
             <url>https://opensource.org/licenses/MIT</url>

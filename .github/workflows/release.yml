@@ -52,7 +52,7 @@ jobs:
           body: |
             # Bijou64 Release ${{ steps.version.outputs.version }}
 
-            See [CHANGELOG](CHANGELOG.md) and [PERFORMANCE](PERFORMANCE.md) for details.
+            See [CHANGELOG](CHANGELOG.md) for details.
 
             ## Artifacts
 

@@ -74,7 +74,7 @@ jobs:
 
     services:
       kafka:
-        image: apache/kafka:3.9.0
+        image: apache/kafka:4.3.0
         ports:
           - 9092:9092
         env:
@@ -125,20 +125,53 @@ jobs:
           echo "Kafka failed to start"
           exit 1
 
-      - name: Run producer benchmark
+      - name: Run comparative benchmarks
         run: |
           cd perf/kafka
-          ./scripts/run-producer.sh \
-            --mode bijou \
-            --bootstrap-server localhost:9092 \
-            --count 50000 \
-            --topic bijou64-benchmark-topic
-        timeout-minutes: 10
+          ./scripts/compare-benchmarks.sh --ci --distribution sequential 50000 2 \
+            bijou64-benchmark-topic localhost:9092
+        timeout-minutes: 20
 
       - name: Upload benchmark results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
-          path: perf/kafka/logs/
+          path: |
+            perf/kafka/logs/
+          retention-days: 30
+
+  jmh:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          cache: maven
+
+      - name: Build native library
+        run: ./build-native.sh
+
+      - name: Run JMH benchmarks
+        run: |
+          mvn -B -Pjmh -DskipTests -Dgpg.skip=true package
+          java -jar target/benchmarks.jar -wi 2 -i 3 -f 1 -rf json -rff target/jmh-results.json
+
+      - name: Upload JMH results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmh-results
+          path: target/jmh-results.json
           retention-days: 30

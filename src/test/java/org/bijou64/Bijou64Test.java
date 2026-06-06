@@ -58,6 +58,17 @@ public class Bijou64Test {
     }
 
     @Test
+    void encodedLenJavaMatchesEncodeLength() {
+        long[] values = new long[] {
+                0L, 247L, 248L, 503L, 504L, 66039L, 16843256L, 4311810551L, Long.MAX_VALUE
+        };
+        for (long value : values) {
+            assertEquals(Bijou64.encodeJava(value).length, Bijou64.encodedLenJava(value));
+            assertEquals(Bijou64.encodedLenJava(value), Bijou64.encodedLen(value));
+        }
+    }
+
+    @Test
     void decodeJavaRejectsOverflowForFfTag() {
         byte[] overflowing = new byte[] {
                 (byte) 0xFF,

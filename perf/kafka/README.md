@@ -124,7 +124,7 @@ mvn -B clean install -DskipTests
 mvn -B clean package -DskipTests
 ```
 
-3. **Start Kafka** (KRaft mode with Docker Compose)
+3. **Start Kafka** (KRaft mode with Docker Compose, Kafka 4.3.0)
 
 ```bash
 docker compose up -d
@@ -166,6 +166,19 @@ Test Bijou64 (Java) serialization:
 ./scripts/run-producer.sh --mode bijou-java --count 200000 --topic bijou64-benchmark-topic --bootstrap-server localhost:9092
 ```
 
+Test with a different value distribution:
+
+```bash
+./scripts/run-producer.sh --mode bijou --distribution uniform --count 200000 --topic bijou64-benchmark-topic --bootstrap-server localhost:9092
+./scripts/run-producer.sh --mode bijou --distribution boundary --warmup-count 10000 --count 200000 --topic bijou64-benchmark-topic --bootstrap-server localhost:9092
+```
+
+Supported distributions:
+
+- `sequential` (default): values `1..count` — favors small integers (~3.7 byte avg)
+- `uniform`: seeded random full-range u64 values
+- `boundary`: cycles tier-edge values from the Rust shootout
+
 #### Consumer Benchmarks
 
 Test deserialization performance:
@@ -175,13 +188,28 @@ Test deserialization performance:
 ./scripts/run-consumer.sh --mode bijou --count 200000 --topic bijou64-benchmark-topic --group-id bijou64-benchmark-group --bootstrap-server localhost:9092
 ```
 
+Self-contained consumer run (produces data first, unique consumer group):
+
+```bash
+./scripts/run-consumer.sh --mode bijou --produce-first true --count 200000 --topic bijou64-benchmark-topic --group-id bijou64-benchmark-group --bootstrap-server localhost:9092
+```
+
 #### Comparative Analysis
 
 Run all modes and compare side-by-side:
 
 ```bash
 ./scripts/compare-benchmarks.sh 200000 3
+./scripts/compare-benchmarks.sh --distribution uniform 200000 3
 ```
+
+CI uses a fast subset:
+
+```bash
+./scripts/compare-benchmarks.sh --ci --distribution sequential 50000 2 bijou64-benchmark-topic localhost:9092
+```
+
+Each mode runs one discarded warmup iteration, then measured iterations. Summary reports **median** rate (not best-of).
 
 This compares:
 
@@ -196,24 +224,24 @@ Use these results to answer: “why use Bijou64 instead of `compression.type`?�
 Benchmark results are stored in `logs/results-*.csv`:
 
 ```csv
-mode,compression,run,rate,avg_bytes,exit_code
-long,none,1,305051,8.0,0
-long,zstd,1,280000,8.0,0
-long,snappy,1,295000,8.0,0
-long,lz4,1,290000,8.0,0
-bijou,none,1,282473,3.7,0
-bijou-java,none,1,370375,3.7,0
+mode,compression,run,rate,avg_bytes,exit_code,logfile,distribution
+long,none,1,305051,8.0,0,logs/producer-long-none-run1-....log,sequential
+bijou,none,1,282473,3.7,0,logs/producer-bijou-none-run1-....log,sequential
+bijou-java,none,1,370375,3.7,0,logs/producer-bijou-java-none-run1-....log,sequential
 ```
 
 **Key Metrics:**
 
-- **rate**: Messages per second throughput
-- **avg_bytes**: Average serialized message size in bytes
+- **rate**: Messages per second throughput (end-to-end Kafka producer run)
+- **avg_bytes**: Average serialized message size in bytes (computed via `encodedLen`, not double-encoded)
 - **exit_code**: 0 = success, non-zero = failure
+- **distribution**: Value generator used for the run
 
 ### Performance Insights
 
-#### Bijou64 vs Long (200K messages, 3 runs)
+#### Bijou64 vs Long (200K messages, 3 runs, sequential distribution)
+
+> **Note:** Re-measure after the double-encoding fix. Numbers below are from prior runs and illustrate payload savings; throughput should be more favorable to bijou modes after the fix.
 
 | Mode           | Avg Throughput | Avg Payload | Space Savings | Network Savings       |
 | -------------- | -------------- | ----------- | ------------- | --------------------- |

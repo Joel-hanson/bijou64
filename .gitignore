@@ -17,12 +17,14 @@ gradle-app.setting
 
 # Rust / Native builds
 native/target/
-native/**/*.rlib
 native/bijou/target/
-Cargo.lock
+native/**/*.rlib
 *.so
 *.dylib
 *.dll
+# Keep JNI lockfile for reproducible native builds
+**/Cargo.lock
+!native/Cargo.lock
 
 # IDE / Editor
 .idea/
@@ -40,11 +42,8 @@ Cargo.lock
 # OS
 .DS_Store
 Thumbs.db
-.env.local
-.env.*.local
 
 # Build artifacts
-/out/
 /bin/
 *.class
 *.log
@@ -57,15 +56,12 @@ Thumbs.db
 *.rar
 
 # Kafka / Perf Testing
-perf/kafka/logs/*.log
-perf/kafka/logs/*.csv
 perf/kafka/logs/
 perf/kafka/target/
-perf/kafka/native/target/
 perf/kafka/data/
 docker-compose.override.yml
 
-# Node / WASM Build
+# Node / WASM Build (submodule)
 node_modules/
 dist/
 *.tsbuildinfo
@@ -81,6 +77,7 @@ htmlcov/
 # Local development
 .env
 .env.local
+.env.*.local
 *.swp
 *.swo
 *~
@@ -94,7 +91,3 @@ flamegraph.svg
 *.orig
 *.patch
 *.rej
-
-# Archive temp
-.DS_Store
-*/.DS_Store

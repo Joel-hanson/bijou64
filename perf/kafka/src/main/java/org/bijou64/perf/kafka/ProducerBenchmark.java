@@ -1,12 +1,10 @@
 package org.bijou64.perf.kafka;
 
-import org.bijou64.Bijou64;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.LongSerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -20,6 +18,8 @@ public class ProducerBenchmark {
         String mode = config.getOrDefault("mode", "bijou");
         long count = Long.parseLong(config.getOrDefault("count", "100000"));
         String compression = config.getOrDefault("compression", "none");
+        String distribution = BenchmarkValues.parseDistribution(config.getOrDefault("distribution", "sequential"));
+        long warmupCount = Long.parseLong(config.getOrDefault("warmup-count", "0"));
 
         String serializerClass;
         boolean useJavaBijou = false;
@@ -35,6 +35,36 @@ public class ProducerBenchmark {
             return;
         }
 
+        Properties props = buildProducerProperties(
+                bootstrapServers, serializerClass, useJavaBijou, compression);
+
+        double avgBytes = BenchmarkValues.averagePayloadBytes(mode, distribution, count);
+
+        System.out.println("Producer benchmark starting with mode=" + mode + ", compression=" + compression
+                + ", distribution=" + distribution + ", topic=" + topic + ", count=" + count
+                + ", warmupCount=" + warmupCount);
+        try (KafkaProducer<String, Long> producer = new KafkaProducer<>(props)) {
+            if (warmupCount > 0) {
+                produceRecords(producer, topic, distribution, warmupCount);
+                producer.flush();
+                System.out.printf("Warmup complete: %,d records.%n", warmupCount);
+            }
+
+            long start = System.nanoTime();
+            produceRecords(producer, topic, distribution, count);
+            producer.flush();
+            long elapsedNanos = System.nanoTime() - start;
+            double elapsedSeconds = elapsedNanos / 1_000_000_000.0;
+            double rate = count / elapsedSeconds;
+
+            System.out.printf("Finished sending %,d records in %.3f seconds.%n", count, elapsedSeconds);
+            System.out.printf("Producer rate: %,.0f records/sec%n", rate);
+            System.out.printf("Average payload size: %.1f bytes%n", avgBytes);
+        }
+    }
+
+    static Properties buildProducerProperties(
+            String bootstrapServers, String serializerClass, boolean useJavaBijou, String compression) {
         Properties props = new Properties();
         props.put("bootstrap.servers", bootstrapServers);
         props.put("key.serializer", StringSerializer.class.getName());
@@ -49,35 +79,12 @@ public class ProducerBenchmark {
         props.put("linger.ms", "5");
         props.put("batch.size", "16384");
         props.put("max.in.flight.requests.per.connection", "5");
+        return props;
+    }
 
-        System.out.println("Producer benchmark starting with mode=" + mode + ", compression=" + compression + ", topic="
-                + topic + ", count=" + count);
-        try (KafkaProducer<String, Long> producer = new KafkaProducer<>(props)) {
-            long start = System.nanoTime();
-            long totalBytes = 0;
-            boolean usingBijou = "bijou".equalsIgnoreCase(mode) || useJavaBijou;
-
-            for (long i = 1; i <= count; i++) {
-                Long value = i;
-                if (usingBijou) {
-                    byte[] encoded = useJavaBijou ? Bijou64.encodeJava(value) : Bijou64.encode(value);
-                    totalBytes += encoded.length;
-                } else {
-                    totalBytes += Long.BYTES;
-                }
-                producer.send(new ProducerRecord<>(topic, String.valueOf(i), value));
-            }
-
-            producer.flush();
-            long elapsedNanos = System.nanoTime() - start;
-            double elapsedSeconds = elapsedNanos / 1_000_000_000.0;
-            double rate = count / elapsedSeconds;
-            double avgBytes = totalBytes / (double) count;
-
-            System.out.printf("Finished sending %,d records in %.3f seconds.%n", count, elapsedSeconds);
-            System.out.printf("Producer rate: %,.0f records/sec%n", rate);
-            System.out.printf("Average payload size: %.1f bytes%n", avgBytes);
-        }
+    static void produceRecords(KafkaProducer<String, Long> producer, String topic, String distribution, long count) {
+        BenchmarkValues.forEach(distribution, count, value ->
+                producer.send(new ProducerRecord<>(topic, String.valueOf(value), value)));
     }
 
     private static Map<String, String> parseArgs(String[] args) {
@@ -90,6 +97,8 @@ public class ProducerBenchmark {
                 case "--mode" -> config.put("mode", requireArg(args, ++i, arg));
                 case "--count" -> config.put("count", requireArg(args, ++i, arg));
                 case "--compression" -> config.put("compression", requireArg(args, ++i, arg));
+                case "--distribution" -> config.put("distribution", requireArg(args, ++i, arg));
+                case "--warmup-count" -> config.put("warmup-count", requireArg(args, ++i, arg));
                 default -> printUsageAndExit("Unknown argument: " + arg);
             }
         }
@@ -106,7 +115,10 @@ public class ProducerBenchmark {
     private static void printUsageAndExit(String message) {
         System.err.println(message);
         System.err.println(
-                "Usage: java org.bijou64.perf.kafka.ProducerBenchmark --mode [bijou|bijou-java|long] --topic <topic> --bootstrap-server <host:port> --count <n> [--compression none|zstd|snappy|lz4]");
+                "Usage: java org.bijou64.perf.kafka.ProducerBenchmark --mode [bijou|bijou-java|long] "
+                        + "--topic <topic> --bootstrap-server <host:port> --count <n> "
+                        + "[--compression none|zstd|snappy|lz4] "
+                        + "[--distribution sequential|uniform|boundary] [--warmup-count <n>]");
         System.exit(1);
     }
 }
