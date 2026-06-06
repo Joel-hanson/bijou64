@@ -48,7 +48,7 @@ public class Bijou64 {
         // no-op
     }
 
-    public static final String VERSION = "0.1.0";
+    public static final String VERSION = "0.2.0";
 
     /**
      * Tag byte threshold: values below this (0–247) are encoded as a single byte.

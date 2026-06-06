@@ -1,6 +1,5 @@
 # Bijou64 - Efficient Variable-Length Integer Encoding for Kafka
 
-[![Maven Central](https://img.shields.io/maven-central/v/org.bijou64/bijou64)](https://central.sonatype.com/search?q=bijou64)
 [![CI](https://github.com/Joel-hanson/bijou64/actions/workflows/ci.yml/badge.svg)](https://github.com/Joel-hanson/bijou64/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
@@ -93,13 +92,13 @@ value.deserializer=org.bijou64.perf.kafka.Bijou64Deserializer
 <dependency>
   <groupId>org.bijou64</groupId>
   <artifactId>bijou64</artifactId>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
 </dependency>
 
 <dependency>
   <groupId>org.bijou64</groupId>
   <artifactId>bijou64-kafka-serializers</artifactId>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
 </dependency>
 ```
 

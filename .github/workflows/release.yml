@@ -54,15 +54,25 @@ jobs:
       - name: Build native library
         run: ./build-native.sh
 
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Set project version from tag
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          mvn -B org.codehaus.mojo:versions-maven-plugin:2.16.2:set \
+            -DnewVersion="${VERSION}" -DgenerateBackupPoms=false
+          mvn -B org.codehaus.mojo:versions-maven-plugin:2.16.2:set \
+            -DnewVersion="${VERSION}" -DgenerateBackupPoms=false -f perf/kafka/pom.xml
+
       - name: Build and test
         run: mvn -B clean verify -Dgpg.skip=true
 
       - name: Build perf module
-        run: ./perf/kafka/scripts/build.sh
-
-      - name: Extract version from tag
-        id: version
-        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        run: |
+          mvn -B install -DskipTests -Dgpg.skip=true
+          mvn -B package -DskipTests -Dgpg.skip=true -f perf/kafka/pom.xml
 
       - name: Wait for Kafka
         run: |
@@ -74,24 +84,6 @@ jobs:
           echo "Kafka failed to start"
           exit 1
 
-      - name: Run Kafka producer benchmarks
-        run: |
-          cd perf/kafka
-          ./scripts/compare-benchmarks.sh --ci --distribution sequential 50000 2 \
-            bijou64-benchmark-topic localhost:9092
-        timeout-minutes: 20
-
-      - name: Run JMH benchmarks
-        run: |
-          mkdir -p release-assets
-          mvn -B -Pjmh -DskipTests -Dgpg.skip=true package
-          java -jar target/benchmarks.jar -wi 2 -i 3 -f 1 -rf json -rff release-assets/jmh-results.json
-
-      - name: Stage release assets
-        run: |
-          mkdir -p release-assets
-          cp "$(ls -t perf/kafka/logs/results-*.csv | head -1)" release-assets/kafka-benchmark-results.csv
-
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
@@ -102,8 +94,6 @@ jobs:
             perf/kafka/target/bijou64-kafka-serializers-${{ steps.version.outputs.version }}.jar
             perf/kafka/target/bijou64-kafka-serializers-${{ steps.version.outputs.version }}-sources.jar
             perf/kafka/target/bijou64-kafka-serializers-${{ steps.version.outputs.version }}-javadoc.jar
-            release-assets/kafka-benchmark-results.csv
-            release-assets/jmh-results.json
           body: |
             # Bijou64 Release ${{ steps.version.outputs.version }}
 
@@ -113,8 +103,6 @@ jobs:
 
             - `bijou64-${{ steps.version.outputs.version }}.jar` - Core library
             - `bijou64-kafka-serializers-${{ steps.version.outputs.version }}.jar` - Kafka Serializer/Deserializer implementations
-            - `kafka-benchmark-results.csv` - Kafka producer benchmark results (CI subset, sequential distribution)
-            - `jmh-results.json` - JMH encode/decode microbenchmark results
 
             ## Integration
 
@@ -158,14 +146,50 @@ jobs:
                 <password>${GH_PACKAGES_TOKEN}</password>
               </server>
             </servers>
+            <profiles>
+              <profile>
+                <id>github-packages</id>
+                <repositories>
+                  <repository>
+                    <id>github</id>
+                    <url>https://maven.pkg.github.com/Joel-hanson/bijou64</url>
+                    <snapshots><enabled>true</enabled></snapshots>
+                  </repository>
+                </repositories>
+              </profile>
+            </profiles>
+            <activeProfiles>
+              <activeProfile>github-packages</activeProfile>
+            </activeProfiles>
           </settings>
           EOF
 
       - name: Upload artifacts to GitHub Packages
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         run: |
-          mvn -B deploy -Pgithub-packages -DskipTests -Dgpg.skip=true
-          mvn -B deploy -Pgithub-packages -DskipTests -Dgpg.skip=true -f perf/kafka/pom.xml
+          set -euo pipefail
+
+          deploy_or_skip_if_exists() {
+            local log
+            log=$(mktemp)
+            if mvn -B deploy "$@" >"$log" 2>&1; then
+              cat "$log"
+              rm -f "$log"
+              return 0
+            fi
+            cat "$log"
+            if grep -qE 'status code: 409|Conflict \(409\)' "$log"; then
+              echo "Version already published to GitHub Packages; continuing."
+              rm -f "$log"
+              return 0
+            fi
+            rm -f "$log"
+            return 1
+          }
+
+          mvn -B install -Pgithub-packages -DskipTests -Dgpg.skip=true
+          deploy_or_skip_if_exists -Pgithub-packages -DskipTests -Dgpg.skip=true
+          deploy_or_skip_if_exists -Pgithub-packages -DskipTests -Dgpg.skip=true -f perf/kafka/pom.xml
 
   build-matrix:
     name: Build on ${{ matrix.os }}

@@ -4,7 +4,7 @@
   <groupId>org.bijou64</groupId>
   <artifactId>bijou64</artifactId>
   <name>Bijou64</name>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
   <description>Efficient variable-length integer encoding library optimized for Kafka message compression</description>
   <url>https://github.com/Joel-hanson/bijou64</url>
   <developers>

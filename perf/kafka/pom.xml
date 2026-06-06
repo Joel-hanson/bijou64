@@ -5,7 +5,7 @@
 
     <groupId>org.bijou64</groupId>
     <artifactId>bijou64-kafka-serializers</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
     <packaging>jar</packaging>
 
     <name>Bijou64 Kafka Serializers</name>
@@ -36,7 +36,7 @@
         <dependency>
             <groupId>org.bijou64</groupId>
             <artifactId>bijou64</artifactId>
-            <version>0.1.0</version>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 

@@ -13,7 +13,7 @@ public class Bijou64Test {
     @Test
     void versionMatches() {
         Bijou64 b = new Bijou64();
-        assertEquals("0.1.0", b.getVersion());
+        assertEquals("0.2.0", b.getVersion());
     }
 
     @Test
