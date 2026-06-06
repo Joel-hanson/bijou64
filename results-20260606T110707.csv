@@ -1,0 +1,13 @@
+mode,compression,run,rate,avg_bytes,exit_code,logfile,distribution
+long,none,1,103613,8.0,0,/home/runner/work/bijou64/bijou64/perf/kafka/logs/producer-long-none-run1-1780744050.log,sequential
+long,none,2,102085,8.0,0,/home/runner/work/bijou64/bijou64/perf/kafka/logs/producer-long-none-run2-1780744070.log,sequential
+long,zstd,1,98682,8.0,0,/home/runner/work/bijou64/bijou64/perf/kafka/logs/producer-long-zstd-run1-1780744111.log,sequential
+long,zstd,2,89515,8.0,0,/home/runner/work/bijou64/bijou64/perf/kafka/logs/producer-long-zstd-run2-1780744131.log,sequential
+bijou,none,1,109022,3.0,0,/home/runner/work/bijou64/bijou64/perf/kafka/logs/producer-bijou-none-run1-1780744171.log,sequential
+bijou,none,2,120157,3.0,0,/home/runner/work/bijou64/bijou64/perf/kafka/logs/producer-bijou-none-run2-1780744192.log,sequential
+bijou,zstd,1,94896,3.0,0,/home/runner/work/bijou64/bijou64/perf/kafka/logs/producer-bijou-zstd-run1-1780744231.log,sequential
+bijou,zstd,2,102681,3.0,0,/home/runner/work/bijou64/bijou64/perf/kafka/logs/producer-bijou-zstd-run2-1780744251.log,sequential
+bijou-java,none,1,113348,3.0,0,/home/runner/work/bijou64/bijou64/perf/kafka/logs/producer-bijou-java-none-run1-1780744292.log,sequential
+bijou-java,none,2,120018,3.0,0,/home/runner/work/bijou64/bijou64/perf/kafka/logs/producer-bijou-java-none-run2-1780744312.log,sequential
+bijou-java,zstd,1,121785,3.0,0,/home/runner/work/bijou64/bijou64/perf/kafka/logs/producer-bijou-java-zstd-run1-1780744352.log,sequential
+bijou-java,zstd,2,95392,3.0,0,/home/runner/work/bijou64/bijou64/perf/kafka/logs/producer-bijou-java-zstd-run2-1780744372.log,sequential
