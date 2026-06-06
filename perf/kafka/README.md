@@ -203,32 +203,38 @@ Run all modes and compare side-by-side:
 ./scripts/compare-benchmarks.sh --distribution uniform 200000 3
 ```
 
-CI uses a fast subset:
+#### CI benchmark (automated)
+
+The **`benchmark` job** in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) runs on every push to `main`. It executes the producer comparison test:
 
 ```bash
 ./scripts/compare-benchmarks.sh --ci --distribution sequential 50000 2 bijou64-benchmark-topic localhost:9092
 ```
 
-Each mode runs one discarded warmup iteration, then measured iterations. Summary reports **median** rate (not best-of).
+| Parameter        | Value                                              |
+| ---------------- | -------------------------------------------------- |
+| Test class       | `org.bijou64.perf.kafka.ProducerBenchmark`         |
+| Messages per run | 50,000                                             |
+| Distribution     | `sequential` (values `1..N`)                       |
+| Iterations       | 2 measured + 1 discarded warmup per mode           |
+| Kafka            | `apache/kafka:4.3.0` (KRaft), `ubuntu-latest`      |
+| Java             | 17 (Temurin)                                       |
+| CI modes         | `long`, `bijou`, `bijou-java` × `none`, `zstd`     |
 
-This compares:
+Each mode runs one discarded warmup iteration, then measured iterations. Summary reports **median** rate (not best-of). Topics are reset between runs via `kafka-topics` (local Docker or GHA service container).
 
-- `long` without compression
-- `long` with Kafka transport compression (`zstd`, `snappy`, `lz4`)
-- `bijou` and `bijou-java` payload-level encoding
+A full local run compares all compression codecs:
+
+```bash
+./scripts/compare-benchmarks.sh 200000 3
+./scripts/compare-benchmarks.sh --distribution uniform 200000 3
+```
 
 Use these results to answer: “why use Bijou64 instead of `compression.type`?” by comparing payload size, throughput, and end-to-end behavior.
 
 ### Results
 
-Benchmark results are stored in `logs/results-*.csv`:
-
-```csv
-mode,compression,run,rate,avg_bytes,exit_code,logfile,distribution
-long,none,1,305051,8.0,0,logs/producer-long-none-run1-....log,sequential
-bijou,none,1,282473,3.7,0,logs/producer-bijou-none-run1-....log,sequential
-bijou-java,none,1,370375,3.7,0,logs/producer-bijou-java-none-run1-....log,sequential
-```
+Benchmark results are stored in `logs/results-*.csv` (uploaded as a CI artifact from the `benchmark` job).
 
 **Key Metrics:**
 
@@ -237,24 +243,33 @@ bijou-java,none,1,370375,3.7,0,logs/producer-bijou-java-none-run1-....log,sequen
 - **exit_code**: 0 = success, non-zero = failure
 - **distribution**: Value generator used for the run
 
-### Performance Insights
+#### Latest CI results (2026-06-06)
 
-#### Bijou64 vs Long (200K messages, 3 runs, sequential distribution)
+From [`results-20260606T110707.csv`](../../results-20260606T110707.csv) — all runs `exit_code=0`:
 
-> **Note:** Re-measure after the double-encoding fix. Numbers below are from prior runs and illustrate payload savings; throughput should be more favorable to bijou modes after the fix.
-
-| Mode           | Avg Throughput | Avg Payload | Space Savings | Network Savings       |
-| -------------- | -------------- | ----------- | ------------- | --------------------- |
-| Long           | 336k msg/s     | 8.0 bytes   | —             | —                     |
-| Bijou64 (JNI)  | 308k msg/s     | 3.7 bytes   | **54%**       | ~1.1 MB per 200K msgs |
-| Bijou64 (Java) | 363k msg/s     | 3.7 bytes   | **54%**       | ~1.1 MB per 200K msgs |
+| Mode           | Compression | Run 1   | Run 2   | Median    | Avg payload |
+| -------------- | ----------- | ------- | ------- | --------- | ----------- |
+| Long           | none        | 103,613 | 102,085 | 102,849   | 8.0 bytes   |
+| Long           | zstd        | 98,682  | 89,515  | 94,099    | 8.0 bytes   |
+| Bijou64 (JNI)  | none        | 109,022 | 120,157 | 114,590   | 3.0 bytes   |
+| Bijou64 (JNI)  | zstd        | 94,896  | 102,681 | 98,789    | 3.0 bytes   |
+| Bijou64 (Java) | none        | 113,348 | 120,018 | 116,683   | 3.0 bytes   |
+| Bijou64 (Java) | zstd        | 121,785 | 95,392  | 108,589   | 3.0 bytes   |
 
 **Interpretation:**
 
-- **Payload size reduction** is consistent across implementations (3.7 vs 8.0 bytes)
-- **Pure-Java implementation** slightly faster than JNI due to lower overhead for small payloads
-- **Network benefits**: Every million messages saves ~5.5 MB in transmission
-- **Storage benefits**: Historical topics storing billions of messages see massive cumulative savings
+- **Payload size:** 3 bytes vs 8 bytes on sequential integers (62% smaller on the wire).
+- **Throughput:** Bijou64 modes are ~11–14% faster than `LongSerializer` without compression on the GHA runner; absolute rates vary by hardware.
+- **Compression:** `zstd` reduces throughput for all modes; Bijou64’s smaller payloads mean less data to compress, so the penalty is relatively smaller.
+- **JNI vs Java:** Comparable on CI; Java slightly ahead on `none`, with higher variance on `zstd`.
+
+#### Local full benchmark (200K messages, 3 runs, sequential)
+
+Run locally for higher-resolution numbers on your hardware:
+
+```bash
+./scripts/compare-benchmarks.sh 200000 3
+```
 
 ## Configuration
 

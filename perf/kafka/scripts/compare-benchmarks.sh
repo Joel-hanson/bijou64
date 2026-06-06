@@ -26,8 +26,11 @@ ALL_MODES=(
 
 CI_MODES=(
   "long:none"
+  "long:zstd"
   "bijou:none"
+  "bijou:zstd"
   "bijou-java:none"
+  "bijou-java:zstd"
 )
 
 CI_MODE=false
@@ -86,19 +89,48 @@ fi
 results_csv="$LOG_DIR/results-$(date +%Y%m%dT%H%M%S).csv"
 echo "mode,compression,run,rate,avg_bytes,exit_code,logfile,distribution" > "$results_csv"
 
+resolve_kafka_topics_cmd() {
+  if [[ -n "${KAFKA_TOPICS_CMD:-}" ]]; then
+    echo "$KAFKA_TOPICS_CMD"
+    return 0
+  fi
+
+  if command -v kafka-topics.sh &> /dev/null; then
+    echo "kafka-topics.sh"
+    return 0
+  fi
+
+  if ! command -v docker &> /dev/null; then
+    return 1
+  fi
+
+  local kafka_bin="/opt/kafka/bin/kafka-topics.sh"
+  if docker ps --format '{{.Names}}' | grep -qx bijou64-kafka; then
+    echo "docker exec bijou64-kafka $kafka_bin"
+    return 0
+  fi
+
+  local kafka_container
+  kafka_container=$(docker ps --filter "publish=9092" --format "{{.Names}}" | head -1)
+  if [[ -n "$kafka_container" ]]; then
+    echo "docker exec $kafka_container $kafka_bin"
+    return 0
+  fi
+
+  local kafka_image="${KAFKA_IMAGE:-apache/kafka:4.3.0}"
+  echo "docker run --rm --network host $kafka_image $kafka_bin"
+}
+
 reset_topic() {
   local topic=$1
   local bootstrap=$2
 
   echo "[bench] Resetting topic '$topic' for clean benchmark..."
 
-  if command -v kafka-topics.sh &> /dev/null; then
-    KAFKA_CMD="kafka-topics.sh"
-  elif command -v docker &> /dev/null && docker ps | grep -q bijou64-kafka; then
-    KAFKA_CMD="docker exec bijou64-kafka /opt/kafka/bin/kafka-topics.sh"
-  else
+  local KAFKA_CMD
+  if ! KAFKA_CMD=$(resolve_kafka_topics_cmd); then
     echo "[bench] Warning: Cannot find kafka-topics command. Skipping topic reset."
-    echo "[bench] Install Kafka CLI tools or ensure Docker container 'bijou64-kafka' is running."
+    echo "[bench] Install Kafka CLI tools or ensure a Kafka broker is reachable on $bootstrap."
     return 0
   fi
 

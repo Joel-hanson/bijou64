@@ -27,15 +27,37 @@ Bijou64 is a variable-length integer encoding library for Kafka `Long`/numeric p
 
 ## Performance
 
-Benchmarked with 200,000 messages per run (Kafka 4.3.0, KRaft mode, `sequential` distribution — values `1..N`, which favors small integers):
+### CI Kafka producer benchmark
 
-| Metric              | Long (baseline) | Bijou64     | Improvement        |
-| ------------------- | --------------- | ----------- | ------------------ |
-| Avg payload size    | 8.0 bytes       | 3.7 bytes   | **54% smaller**    |
-| Producer throughput | ~336k msg/s     | ~308k msg/s | ~8% overhead       |
-| Consumer throughput | ~285k msg/s     | ~261k msg/s | Network savings help |
+On every push to `main`, the **`benchmark` job** in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs the producer comparison test:
 
-These throughput numbers are **end-to-end Kafka runs** (producer/consumer + broker + network), not pure encode/decode microbenchmarks. Re-measure on your hardware after the benchmark methodology fix (no double encoding on bijou modes).
+```bash
+./scripts/compare-benchmarks.sh --ci --distribution sequential 50000 2 \
+  bijou64-benchmark-topic localhost:9092
+```
+
+**Test setup:** 50,000 messages per run, `sequential` distribution (values `1..N`), 2 measured iterations per mode (plus 1 discarded warmup), median rate reported. Kafka 4.3.0 (KRaft) on `ubuntu-latest`, Java 17.
+
+**Modes tested in CI:** `long` and `bijou` / `bijou-java`, each with `none` and `zstd` compression.
+
+Results from CI run `2026-06-06` ([`results-20260606T110707.csv`](results-20260606T110707.csv)):
+
+| Mode           | Compression | Median throughput | Avg payload |
+| -------------- | ----------- | ----------------- | ----------- |
+| Long           | none        | 102,849 msg/s     | 8.0 bytes   |
+| Long           | zstd        | 94,099 msg/s      | 8.0 bytes   |
+| Bijou64 (JNI)  | none        | 114,590 msg/s     | 3.0 bytes   |
+| Bijou64 (JNI)  | zstd        | 98,789 msg/s      | 3.0 bytes   |
+| Bijou64 (Java) | none        | 116,683 msg/s     | 3.0 bytes   |
+| Bijou64 (Java) | zstd        | 108,589 msg/s     | 3.0 bytes   |
+
+**Takeaways from CI:**
+
+- **62% smaller payloads** on sequential integers (3 vs 8 bytes) — consistent with the ~54% average savings claim for mixed distributions.
+- **~11–14% higher producer throughput** than `LongSerializer` without compression on the GHA runner.
+- `zstd` transport compression reduces throughput for all modes; Bijou64’s smaller payloads compress less data, so the relative penalty is smaller.
+
+These are **end-to-end Kafka producer runs** (client + broker + network), not pure encode/decode microbenchmarks. Absolute rates depend on hardware; run the same test locally for your environment (see [perf/kafka](perf/kafka/README.md)).
 
 ### Microbenchmarks (JMH)
 
