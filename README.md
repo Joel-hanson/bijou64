@@ -124,8 +124,12 @@ bijou64.useJava=true
 mvn test
 ```
 
+## Acknowledgments
+
+This project implements the [bijou64](https://github.com/inkandswitch/bijou/tree/main/bijou64) wire format from [Bijou](https://github.com/inkandswitch/bijou) by [Ink & Switch](https://www.inkandswitch.com/). The native implementation uses the upstream Rust crate via a git submodule and JNI.
+
+The [bijou64 write-up](https://www.inkandswitch.com/tangents/bijou64/) on Ink & Switch’s site is a great introduction to the encoding and what motivated it.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
-
-Based on the [Bijou](https://github.com/inkandswitch/bijou) encoding by Ink & Switch.
