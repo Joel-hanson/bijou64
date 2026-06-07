@@ -29,7 +29,7 @@ jobs:
           cache: maven
 
       - name: Build native library
-        run: ./build-native.sh
+        run: ./scripts/build-native.sh
 
       - name: Run tests
         run: mvn -B clean verify -Dgpg.skip=true
@@ -62,7 +62,7 @@ jobs:
           cache: maven
 
       - name: Build native library
-        run: ./build-native.sh
+        run: ./scripts/build-native.sh
         if: runner.os != 'Windows'
 
       - name: Run tests
@@ -108,7 +108,7 @@ jobs:
           cache: maven
 
       - name: Build native library
-        run: ./build-native.sh
+        run: ./scripts/build-native.sh
 
       - name: Install and build
         run: |
@@ -161,7 +161,7 @@ jobs:
           cache: maven
 
       - name: Build native library
-        run: ./build-native.sh
+        run: ./scripts/build-native.sh
 
       - name: Run JMH benchmarks
         run: |

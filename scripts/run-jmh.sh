@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "$0")/.." && pwd)
 cd "$ROOT_DIR"
 
-./build-native.sh
+"$(dirname "$0")/build-native.sh"
 
 JMH_ARGS=("$@")
 if [[ ${#JMH_ARGS[@]} -eq 0 ]]; then

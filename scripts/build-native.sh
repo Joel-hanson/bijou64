@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 set -e
-cd "$(dirname "$0")"
+ROOT_DIR=$(cd "$(dirname "$0")/.." && pwd)
+cd "$ROOT_DIR"
 
 if [ ! -d native/bijou ]; then
   git submodule update --init --depth 1 native/bijou

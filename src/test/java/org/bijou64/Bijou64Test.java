@@ -22,6 +22,15 @@ public class Bijou64Test {
         assertArrayEquals(new byte[] { (byte) 0xF8, 0x34 }, encoded);
         assertEquals(300, Bijou64.decodeJava(encoded));
 
+        encoded = Bijou64.encodeJava(200);
+        assertArrayEquals(new byte[] { (byte) 0xC8 }, encoded);
+        assertEquals(200, Bijou64.decodeJava(encoded));
+
+        encoded = Bijou64.encodeJava(20);
+        assertArrayEquals(new byte[] { 0x14 }, encoded);
+
+        assertEquals(20, Bijou64.decodeJava(encoded));
+
         assertArrayEquals(new byte[] { 0x00 }, Bijou64.encodeJava(0));
         assertEquals(247, Bijou64.decodeJava(new byte[] { (byte) 0xF7 }));
     }

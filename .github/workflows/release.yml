@@ -52,7 +52,7 @@ jobs:
           cache: maven
 
       - name: Build native library
-        run: ./build-native.sh
+        run: ./scripts/build-native.sh
 
       - name: Extract version from tag
         id: version
@@ -214,7 +214,7 @@ jobs:
           cache: maven
 
       - name: Build (native)
-        run: ./build-native.sh
+        run: ./scripts/build-native.sh
         if: runner.os != 'Windows'
 
       - name: Build (Java)

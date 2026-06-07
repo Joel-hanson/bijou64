@@ -48,6 +48,9 @@ public class Bijou64 {
         // no-op
     }
 
+    /**
+     * The version of the bijou64 library.
+     */
     public static final String VERSION = "0.2.0";
 
     /**
@@ -75,6 +78,11 @@ public class Bijou64 {
      */
     private static final boolean NATIVE_AVAILABLE = loadNativeLibrary();
 
+    /**
+     * Returns the version of the bijou64 library.
+     *
+     * @return the version of the bijou64 library
+     */
     public String getVersion() {
         return VERSION;
     }
@@ -82,6 +90,8 @@ public class Bijou64 {
     /**
      * Returns whether the native JNI library is available.
      * If false, all encode/decode operations use the pure-Java implementation.
+     *
+     * @return true if the native JNI library is available, false otherwise
      */
     public static boolean isNativeAvailable() {
         return NATIVE_AVAILABLE;
